@@ -1,2 +1,2 @@
-# poker-client-server
-Texas Holdem client-server app
+# texas-holdem-client-server
+Texas Holdem poker client-server app
