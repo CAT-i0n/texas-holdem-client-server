@@ -1,8 +1,8 @@
+from typing import Union
+
 from pydantic import BaseModel
 
-from typing import Union
-from .deck import Card
-from .constants import PlayerOptions, Combinations
+from .constants import Combinations, GameRole, PlayerOptions
 
 ActionValue = Union[None, int, tuple[int, int]]
 
@@ -26,7 +26,8 @@ class Player(BaseModel):
     bet: int = 0
     cards: list[Card] = []
     is_active: bool = True
-    # combination: Combination | None = None
+    combination: Combination | None = None
+    role: GameRole | None = None
 
     def bet_chips(self, bet):
         if self.bet + self.chips > bet:

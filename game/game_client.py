@@ -74,10 +74,14 @@ class CLIClient(BaseClient):
         os.system("clear")
         for player in state.players:
             print(
-                f"name: {player.name}{" - active" if state.active_player == player.name else ""}\n  chips: {player.chips}\n  bet: {player.bet}"
+                f"name: {player.name} {player.role.name if player.role else ""}{" - active" if state.active_player == player.name else ""}\n  chips: {player.chips}\n  bet: {player.bet}"
             )
             if player.cards:
-                print("  cards:", " ".join(CARD_VALUES[card.value] + CARD_SUITS[card.suit] for card in player.cards))
+                print(
+                    "  cards:",
+                    " ".join(CARD_VALUES[card.value] + CARD_SUITS[card.suit] for card in player.cards),
+                    player.combination.combination.name if player.combination else "",
+                )
             else:
                 print("  cards: Xx Xx")
         print("------------------")

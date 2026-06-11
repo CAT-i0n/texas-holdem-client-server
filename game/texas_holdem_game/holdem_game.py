@@ -1,11 +1,11 @@
-from collections import deque, defaultdict
+from collections import defaultdict, deque
 from itertools import cycle
 from typing import Generator
 
-from .deck import Card, Deck
 from .combination_comparator import CombinationComparator
-from .constants import CARDS_TO_BOARD, CHIPS_TO_BLIND_RATIO, FISRT_PLAYER_NUM, GAME_ROUNDS, PlayerOptions
-from .models import Player, Card, ActionValue, GameState, PlayerMove
+from .constants import CARDS_TO_BOARD, CHIPS_TO_BLIND_RATIO, FISRT_PLAYER_NUM, GAME_ROUNDS, GameRole, PlayerOptions
+from .deck import Card, Deck
+from .models import ActionValue, Card, GameState, Player, PlayerMove
 
 
 class TexasHoldemGame:
@@ -27,6 +27,7 @@ class TexasHoldemGame:
             if order and player == order[0]:
                 yield order
                 order = []
+                continue
             if player.is_active:
                 order.append(player)
 
@@ -89,16 +90,15 @@ class TexasHoldemGame:
 
             # initiate round
             players_order = next(order_generator)
-            players_order[0].bet_chips(self._blind_size // 2)
-            players_order[1].bet_chips(self._blind_size)
-            self._current_bet = self._blind_size
+            self._set_roles(players_order)
             self._deck.reshuffle_deck()
             for player in players_order:
                 player.cards = self._deck.get_cards(2)
 
+            # game
             for round in GAME_ROUNDS:
                 yield from self._betting_round(
-                    first_player=players_order[round[FISRT_PLAYER_NUM]],
+                    first_player=players_order[round[FISRT_PLAYER_NUM] % len(players_order)],
                     cards_to_board=round[CARDS_TO_BOARD],
                 )
                 active_players = [player for player in self._players if player.cards]
@@ -106,13 +106,27 @@ class TexasHoldemGame:
                     active_players[0].chips += sum(self._pot.values())
                     break
 
-            yield self._gen_state()
-
+            # showdown
             active_players = [player for player in self._players if player.cards]
             if len(active_players) > 1:
-                self._compute_result()
+                winners = self._combination_comparator.get_winners(active_players, self._board_cards)
+                yield self._gen_state()
+                self._compute_result(winners=winners)
+
             self._board_cards.clear()
             self._pot.clear()
+            for player in active_players:
+                player.combination = None
+            for player in self._players:
+                if player.chips == 0:
+                    player.is_active = False
+                player.role = None
+
+    def _set_roles(self, playing_order: list[Player]):
+        for player, role in zip(cycle(playing_order), GameRole):
+            player.role = role
+            player.bet_chips(min(int(self._blind_size * role.value), player.chips))
+        self._current_bet = self._blind_size
 
     def _betting_round(self, first_player: Player, cards_to_board: int = 0) -> Generator[GameState]:
         self._board_cards += self._deck.get_cards(cards_to_board)
@@ -131,7 +145,7 @@ class TexasHoldemGame:
             player.bet = 0
         return
 
-    def _compute_result(self):
+    def _compute_result(self, winners: list[list[Player]]):
         pot = sum(self._pot.values())
         active_players = sorted(
             [player for player in self._players if player.cards],
@@ -151,9 +165,8 @@ class TexasHoldemGame:
                 pot -= win
                 pot_sums += win
 
-        winners = self._combination_comparator.get_winners(active_players, self._board_cards)
         for side_amount, eligible_list in list(side_pots.items()):
-            for _, players_in_group in winners:
+            for players_in_group in winners:
                 actual_winners = [p for p in players_in_group if p in eligible_list]
                 if actual_winners:
                     share = side_amount // len(actual_winners)

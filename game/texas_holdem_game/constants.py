@@ -20,6 +20,12 @@ CARD_VALUES = {
 CHIPS_TO_BLIND_RATIO = 100
 
 
+class GameRole(Enum):
+    BUTTON = 0
+    SMALL_BLIND = 0.5
+    BIG_BLIND = 1
+
+
 class PlayerOptions(Enum):
     BET = "bet"
     CHECK = "check"
@@ -45,8 +51,8 @@ FISRT_PLAYER_NUM = "first_player_num"
 CARDS_TO_BOARD = "cards_to_boards"
 
 GAME_ROUNDS = (
-    {FISRT_PLAYER_NUM: 2, CARDS_TO_BOARD: 0},
-    {FISRT_PLAYER_NUM: 0, CARDS_TO_BOARD: 3},
-    {FISRT_PLAYER_NUM: 0, CARDS_TO_BOARD: 1},
-    {FISRT_PLAYER_NUM: 0, CARDS_TO_BOARD: 1},
+    {FISRT_PLAYER_NUM: 3, CARDS_TO_BOARD: 0},
+    {FISRT_PLAYER_NUM: 1, CARDS_TO_BOARD: 3},
+    {FISRT_PLAYER_NUM: 1, CARDS_TO_BOARD: 1},
+    {FISRT_PLAYER_NUM: 1, CARDS_TO_BOARD: 1},
 )

@@ -1,18 +1,19 @@
-from collections import Counter, defaultdict
-from itertools import permutations
+from collections import Counter
+from itertools import groupby, permutations
 
-from .deck import Card
 from .constants import Combinations
-from .models import Player, Combination, Card
+from .deck import Card
+from .models import Card, Combination, Player
 
 
 class CombinationComparator:
 
-    def get_winners(self, players: list[Player], board_cards: list[Card]) -> list[tuple[Combination, list[Player]]]:
-        player_combinations: dict[Combination, list[Player]] = defaultdict(list)
+    def get_winners(self, players: list[Player], board_cards: list[Card]) -> list[list[Player]]:
         for player in players:
-            player_combinations[self._get_best_combination(player.cards + board_cards)].append(player)
-        return sorted(list(player_combinations.items()), key=lambda x: x[0])
+            player.combination = self._get_best_combination(player.cards + board_cards)
+
+        players = sorted(players, key=lambda player: player.combination)
+        return reversed(list(groupby(players)))
 
     def _get_best_combination(self, cards: list[Card]) -> Combination:
         combinations: list[Combination] = []
@@ -59,24 +60,24 @@ class CombinationComparator:
 #         name="a",
 #         cards=[
 #             Card(suit="h", value=14),
-#             Card(suit="d", value=14),
+#             Card(suit="d", value=5),
 #         ],
 #     )
 #     player2 = Player(
 #         name="b",
 #         cards=[
 #             Card(suit="s", value=14),
-#             Card(suit="c", value=14),
+#             Card(suit="c", value=10),
 #         ],
 #     )
 #     winners = c.get_winners(
 #         players=[player1, player2],
 #         board_cards=[
-#             Card(suit="h", value=13),
-#             Card(suit="d", value=13),
-#             Card(suit="h", value=5),
+#             Card(suit="h", value=14),
+#             Card(suit="d", value=5),
+#             Card(suit="c", value=3),
 #             Card(suit="h", value=6),
-#             Card(suit="h", value=7),
+#             Card(suit="c", value=7),
 #         ],
 #     )
 #     for item in winners:
