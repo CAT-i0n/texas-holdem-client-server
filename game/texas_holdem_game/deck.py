@@ -1,13 +1,8 @@
 from random import shuffle
 
-from pydantic import BaseModel
+from .models import Card
 
 from .constants import CARD_SUITS, CARD_VALUES
-
-
-class Card(BaseModel):
-    suit: str
-    value: int
 
 
 class Deck:

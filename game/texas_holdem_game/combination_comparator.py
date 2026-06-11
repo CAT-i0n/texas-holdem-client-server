@@ -1,26 +1,9 @@
 from collections import Counter, defaultdict
 from itertools import permutations
 
-from pydantic import BaseModel
-
-from .cards import Card
+from .deck import Card
 from .constants import Combinations
-from .player import Player
-
-
-class Combination(BaseModel):
-    combination: Combinations
-    cards: list[Card]
-    top_values: tuple[int, ...]
-
-    def __gt__(self, other: Combination):
-        return (self.combination.value, self.top_values) > (other.combination.value, other.top_values)
-
-    def __eq__(self, other: Combination):
-        return (self.combination.value, self.top_values) == (other.combination.value, other.top_values)
-
-    def __hash__(self):
-        return hash((self.combination.value, self.top_values))
+from .models import Player, Combination, Card
 
 
 class CombinationComparator:
