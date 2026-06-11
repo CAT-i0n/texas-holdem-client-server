@@ -10,10 +10,12 @@ class BaseClient(ABC):
 
     @abstractmethod
     async def move(self, state: GameState) -> PlayerMove:
+        """Wait for the player's move."""
         pass
 
     @abstractmethod
     async def update_state(self, state: GameState) -> None:
+        """Update the current game state."""
         pass
 
     @property

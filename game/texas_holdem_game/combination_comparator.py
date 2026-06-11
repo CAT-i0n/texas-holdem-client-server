@@ -9,13 +9,15 @@ from .models import Card, Combination, Player
 class CombinationComparator:
 
     def get_winners(self, players: list[Player], board_cards: list[Card]) -> list[list[Player]]:
+        """Compute each player's best hand combination and return groups of players sorted by hand strength."""
         for player in players:
             player.combination = self._get_best_combination(player.cards + board_cards)
 
-        players = sorted(players, key=lambda player: player.combination)
-        return reversed(list(groupby(players)))
+        players = sorted(players, key=lambda player: player.combination, reverse=True)
+        return [list(group) for _, group in groupby(players, key=lambda player: player.combination)]
 
     def _get_best_combination(self, cards: list[Card]) -> Combination:
+        """Compute the best 5-card hand combination from a list of cards."""
         combinations: list[Combination] = []
         for hand in permutations(cards, 5):
             combinations.append(self._compute_combination(hand))

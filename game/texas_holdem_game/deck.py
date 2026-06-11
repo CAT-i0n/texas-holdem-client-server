@@ -1,8 +1,7 @@
 from random import shuffle
 
-from .models import Card
-
 from .constants import CARD_SUITS, CARD_VALUES
+from .models import Card
 
 
 class Deck:
@@ -14,9 +13,11 @@ class Deck:
         self._cards = self.reshuffle_deck()
 
     def reshuffle_deck(self) -> None:
+        """Regenerate and reshuffle the deck."""
         shuffle(self._deck)
         self._cards = self._deck.copy()
 
     def get_cards(self, n: int) -> list[Card]:
+        """Deal n cards from the deck."""
         n_cards, self._cards = self._cards[:n], self._cards[n:]
         return n_cards

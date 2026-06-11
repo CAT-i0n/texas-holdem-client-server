@@ -9,6 +9,12 @@ from .models import ActionValue, Card, GameState, Player, PlayerMove
 
 
 class TexasHoldemGame:
+    """A Texas Hold'em poker game engine.
+
+    Manages players, chips, betting rounds, and hand evaluation.
+    The main entry point is the game_loop() generator, which yields
+    GameState objects after each player action.
+    """
 
     def __init__(self, player_names: list[str], blind_size: int = 10, deck=Deck()):
         self._players: list[Player] = [Player(name=name) for name in player_names]
@@ -22,6 +28,7 @@ class TexasHoldemGame:
         self._combination_comparator = CombinationComparator()
 
     def _playing_order_generator(self) -> Generator[list[Player]]:
+        """Generate the playing orderfor for each deal."""
         order = []
         for player in cycle(self._players):
             if order and player == order[0]:
@@ -32,6 +39,7 @@ class TexasHoldemGame:
                 order.append(player)
 
     def _current_order_generator(self, player: Player) -> deque[Player]:
+        """Generate the playing order for the current round."""
         ind = self._players.index(player)
         order = deque()
         for player in self._players[ind:] + self._players[:ind]:
@@ -44,6 +52,7 @@ class TexasHoldemGame:
         active_player: Player | None = None,
         options: dict[PlayerOptions, ActionValue] = {},
     ) -> GameState:
+        """Generate the current state of the game."""
         self._active_player = active_player
         state = GameState(
             players=self._players,
@@ -55,6 +64,7 @@ class TexasHoldemGame:
         return state
 
     def _gen_options(self, player: Player) -> dict[PlayerOptions, ActionValue]:
+        """Generate available moves for the player."""
         options = {}
         if player.chips > 0:
             options[PlayerOptions.FOLD] = None
@@ -67,7 +77,8 @@ class TexasHoldemGame:
                 options[PlayerOptions.BET] = (min(player.chips, self._blind_size), player.chips)
         return options
 
-    def update_move(self, move: PlayerMove):
+    def update_move(self, move: PlayerMove) -> None:
+        """Update the game state based on the player's move."""
         match move.move:
             case PlayerOptions.FOLD:
                 self._pot[self._active_player] += self._active_player.bet
@@ -82,6 +93,7 @@ class TexasHoldemGame:
                 self._current_order.popleft()
 
     def game_loop(self) -> Generator[GameState]:
+        """Run the main game loop and yield the game state after each action."""
         for player in self._players:
             player.chips = self._blind_size * CHIPS_TO_BLIND_RATIO
 
@@ -107,28 +119,36 @@ class TexasHoldemGame:
                     break
 
             # showdown
-            active_players = [player for player in self._players if player.cards]
-            if len(active_players) > 1:
-                winners = self._combination_comparator.get_winners(active_players, self._board_cards)
-                yield self._gen_state()
-                self._compute_result(winners=winners)
+            yield from self._end_deal()
 
-            self._board_cards.clear()
-            self._pot.clear()
-            for player in active_players:
-                player.combination = None
-            for player in self._players:
-                if player.chips == 0:
-                    player.is_active = False
-                player.role = None
+        yield self._gen_state()
+
+    def _end_deal(self):
+        """Compute winners, yield the final game state, and clear the deal data."""
+        active_players = [player for player in self._players if player.cards]
+        if len(active_players) > 1:
+            winners = self._combination_comparator.get_winners(active_players, self._board_cards)
+            yield self._gen_state()
+            self._compute_result(winners=winners)
+
+        self._board_cards.clear()
+        self._pot.clear()
+        for player in active_players:
+            player.combination = None
+        for player in self._players:
+            if player.chips == 0:
+                player.is_active = False
+            player.role = None
 
     def _set_roles(self, playing_order: list[Player]):
+        """Set the button, small blind, and big blind roles."""
         for player, role in zip(cycle(playing_order), GameRole):
             player.role = role
             player.bet_chips(min(int(self._blind_size * role.value), player.chips))
         self._current_bet = self._blind_size
 
     def _betting_round(self, first_player: Player, cards_to_board: int = 0) -> Generator[GameState]:
+        """Yield game states during a betting round."""
         self._board_cards += self._deck.get_cards(cards_to_board)
         self._current_order = self._current_order_generator(first_player)
         while self._current_order:
@@ -145,7 +165,8 @@ class TexasHoldemGame:
             player.bet = 0
         return
 
-    def _compute_result(self, winners: list[list[Player]]):
+    def _compute_result(self, winners: list[list[Player]]) -> None:
+        """Distribute the pot and compute the winning amounts for each player."""
         pot = sum(self._pot.values())
         active_players = sorted(
             [player for player in self._players if player.cards],
