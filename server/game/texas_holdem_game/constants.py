@@ -20,31 +20,31 @@ CARD_VALUES = {
 CHIPS_TO_BLIND_RATIO = 100
 
 
-class GameRole(Enum):
-    BUTTON = 0
-    SMALL_BLIND = 0.5
-    BIG_BLIND = 1
+class GameRole(float, Enum):
+    BUTTON: int = 0.0
+    SMALL_BLIND: int = 0.5
+    BIG_BLIND: int = 1.0
 
 
-class PlayerOptions(Enum):
-    BET = "bet"
-    CHECK = "check"
-    FOLD = "fold"
-    CALL = "call"
-    RAISE = "raise"
+class PlayerOptions(str, Enum):
+    BET: str = "bet"
+    CHECK: str = "check"
+    FOLD: str = "fold"
+    CALL: str = "call"
+    RAISE: str = "raise"
 
 
 class Combinations(Enum):
-    HIGH_CARD = 0
-    PAIR = 1
-    TWO_PAIRS = 2
-    THREE_OF_A_KING = 3
-    STRAIGHT = 4
-    FLUSH = 5
-    FULL_HOUSE = 6
-    FOUR_OF_A_KING = 7
-    STRAIGHT_FLUSH = 8
-    ROYAL_FLUSH = 9
+    HIGH_CARD: int = 0
+    PAIR: int = 1
+    TWO_PAIRS: int = 2
+    THREE_OF_A_KING: int = 3
+    STRAIGHT: int = 4
+    FLUSH: int = 5
+    FULL_HOUSE: int = 6
+    FOUR_OF_A_KING: int = 7
+    STRAIGHT_FLUSH: int = 8
+    ROYAL_FLUSH: int = 9
 
 
 FISRT_PLAYER_NUM = "first_player_num"

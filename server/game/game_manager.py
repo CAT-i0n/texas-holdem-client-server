@@ -14,6 +14,10 @@ class GameManager:
         else:
             raise
 
+    def remove_client(self, name):
+        if name in self._clients:
+            del self._clients[name]
+
     async def run_game(self):
         """Run the game with all connected clients."""
         if len(self._clients) > 1:
