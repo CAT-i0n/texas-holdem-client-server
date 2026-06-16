@@ -1,6 +1,6 @@
 from typing import Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 from .constants import Combinations, GameRole, PlayerOptions
 
@@ -46,6 +46,10 @@ class Combination(BaseModel):
     combination: Combinations
     cards: list[Card]
     top_values: tuple[int, ...]
+
+    @field_serializer("combination")
+    def serialize_combination(self, combination: Combinations | None):
+        return None if not combination else combination.name
 
     def __gt__(self, other: Combination):
         return (self.combination.value, self.top_values) > (other.combination.value, other.top_values)
