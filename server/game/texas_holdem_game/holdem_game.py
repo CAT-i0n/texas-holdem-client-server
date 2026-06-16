@@ -135,6 +135,7 @@ class TexasHoldemGame:
         self._pot.clear()
         for player in active_players:
             player.combination = None
+            player.cards.clear()
         for player in self._players:
             if player.chips == 0:
                 player.is_active = False
