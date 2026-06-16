@@ -3,9 +3,13 @@ from json import JSONDecodeError
 from typing import Coroutine
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from .game.game_manager import BaseClient, Bot, GameManager, GameState, PlayerMove
+from .game.texas_holdem_game.constants import PlayerOptions
+
+from starlette.websockets import WebSocketState
 
 
 class WebSocketClient(BaseClient):
@@ -17,29 +21,41 @@ class WebSocketClient(BaseClient):
 
     async def move(self, state: GameState) -> PlayerMove:
         await self.update_state(state=state)
-        while True:
-            try:
-                player_move = await self.wait_task
-                return PlayerMove.model_validate_json(player_move)
-            except ValidationError, JSONDecodeError:
-                pass
+        # while True:
+        #     try:
+        #         player_move = await self.wait_task
+        #         return PlayerMove.model_validate_json(player_move)
+        #     except ValidationError, JSONDecodeError:
+        #         pass
+        if PlayerOptions.CALL in state.options:
+            return PlayerMove(move=PlayerOptions.CALL)
+        return PlayerMove(move=PlayerOptions.CHECK)
 
     async def update_state(self, state: GameState) -> None:
-        await self._websocket.send_json(state.model_dump())
+        if self._websocket.client_state == WebSocketState.CONNECTED:
+            await self._websocket.send_json(state.model_dump())
 
 
 class GameServer:
     def __init__(self):
         self.game_manager = GameManager()
-        for i in range(3):
+        for i in range(2):
             self.game_manager.add_client(Bot(name="Bot" + str(i + 1)))
         self.app = FastAPI()
+
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["http://localhost:5173"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
         self.setup_routes()
 
     def setup_routes(self):
         @self.app.post("/start")
         async def start_game():
-            await self.game_manager.run_game()
+            self.game_manager.run_game()
 
         @self.app.websocket("/connect/{name}")
         async def connect_player(websocket: WebSocket, name: str):
@@ -47,7 +63,6 @@ class GameServer:
                 client = WebSocketClient(name=name, websocket=websocket)
                 self.game_manager.add_client(client)
                 await websocket.accept()
-                print("opened")
                 while True:
                     task_message = asyncio.create_task(websocket.receive_json())
                     client.wait_task = task_message
@@ -56,7 +71,7 @@ class GameServer:
                     except JSONDecodeError:
                         continue
             except WebSocketDisconnect:
-                print("closed")
+                pass
             except Exception as e:
                 print(f"WebSocket connection closed with exception: {e}")
             finally:
