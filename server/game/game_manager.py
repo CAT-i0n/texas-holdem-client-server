@@ -7,6 +7,7 @@ from .texas_holdem_game.holdem_game import GameState, PlayerMove, TexasHoldemGam
 class GameManager:
     def __init__(self):
         self._clients: dict[str, BaseClient] = {}
+        self._game_process = None
 
     def add_client(self, client: BaseClient):
         if client.name not in self._clients:
@@ -17,14 +18,19 @@ class GameManager:
     def remove_client(self, name):
         if name in self._clients:
             del self._clients[name]
+        if all(isinstance(player, Bot) for player in self._clients):
+            self._game_process.cancel()
 
-    async def run_game(self):
+    def run_game(self):
         """Run the game with all connected clients."""
         if len(self._clients) > 1:
             game = TexasHoldemGame(player_names=[name for name in self._clients])
         else:
             raise
 
+        self._game_process = asyncio.create_task(self.game_loop(game))
+
+    async def game_loop(self, game):
         for game_state in game.game_loop():
             if game_state.active_player:
                 player_move = await self._send_state_with_hidden_cards(game_state=game_state)
@@ -34,6 +40,7 @@ class GameManager:
                 async with asyncio.TaskGroup() as tg:
                     for client_name in self._clients:
                         tg.create_task(self._clients[client_name].update_state(game_state))
+                await asyncio.sleep(1)
 
     async def _send_state_with_hidden_cards(self, game_state: GameState) -> PlayerMove:
         """Send the masked game state to all clients and await the active player's move."""
