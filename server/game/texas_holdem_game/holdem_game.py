@@ -43,7 +43,7 @@ class TexasHoldemGame:
         ind = self._players.index(player)
         order = deque()
         for player in self._players[ind:] + self._players[:ind]:
-            if player.cards:
+            if player.cards and (player.chips or player.bet):
                 order.append(player)
         return order if len(order) >= 2 else deque()
 
@@ -70,8 +70,8 @@ class TexasHoldemGame:
             options[PlayerOptions.FOLD] = None
             if player.bet < self._current_bet:
                 options[PlayerOptions.CALL] = min(player.chips, self._current_bet - player.bet)
-                if self._current_bet and player.chips + player.bet > self._current_bet * 2:
-                    options[PlayerOptions.RAISE] = (min(player.chips, self._current_bet * 2), player.chips)
+                if self._current_bet and player.chips > self._current_bet - player.bet:
+                    options[PlayerOptions.RAISE] = (min(player.chips, self._current_bet * 2 - player.bet), player.chips)
             else:
                 options[PlayerOptions.CHECK] = None
                 options[PlayerOptions.BET] = (min(player.chips, self._blind_size), player.chips)
@@ -84,10 +84,10 @@ class TexasHoldemGame:
                 self._pot[self._active_player] += self._active_player.bet
                 self._active_player.cards.clear()
             case PlayerOptions.CALL:
-                self._active_player.bet_chips(self._current_bet)
+                self._active_player.bet_chips(self._current_bet - self._active_player.bet)
             case PlayerOptions.BET | PlayerOptions.RAISE:
-                self._current_bet = move.bet
                 self._active_player.bet_chips(move.bet)
+                self._current_bet = self._active_player.bet
                 self._current_order.clear()
                 self._current_order = self._current_order_generator(self._active_player)
                 self._current_order.popleft()

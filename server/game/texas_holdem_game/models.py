@@ -30,12 +30,11 @@ class Player(BaseModel):
     role: GameRole | None = None
 
     def bet_chips(self, bet):
-        if self.bet + self.chips > bet:
-            diff = bet - self.bet
-            self.chips -= diff
-            self.bet = bet
+        if bet < self.chips:
+            self.chips -= bet
+            self.bet += bet
         else:
-            self.bet = bet
+            self.bet += self.chips
             self.chips = 0
 
     def __hash__(self):
