@@ -1,22 +1,30 @@
 import { createRoot } from "react-dom/client";
-import { Game } from "./src/game";
+import { Game } from "./src/Game";
+import { OptionButtons } from "./src/OptionButtons"
 
-const startEndpoint = "http://localhost:8000/start"
+const startEndpoint = `/start`
+
+const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
+const ws = new WebSocket(`${wsProtocol}://${location.host}/connect/Player${String(Date.now()).slice(-4, -1)}`);
 
 
-let ws = new WebSocket(`ws://localhost:8000/connect/player${String(Date.now()).slice(-4, -1)}`);
+function send_data(move, bet = NaN) {
+    ws.send(JSON.stringify({ "move": move, "bet": bet }))
+}
 
 ws.onopen = () => {
     console.log('Connected to WebSocket server');
 };
 ws.onmessage = (event) => {
     const gameState = JSON.parse(event.data)
-    root.render(
+    root.render(<div>
         <Game gameState={gameState} />
+        {
+            gameState?.options &&
+            <OptionButtons options={gameState.options} send_data={send_data} />
+        }
+    </div>
     )
-    if (gameState?.options) {
-        let x = 1
-    }
 };
 ws.onclose = () => {
     console.log('Connection closed');

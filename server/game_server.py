@@ -21,15 +21,13 @@ class WebSocketClient(BaseClient):
 
     async def move(self, state: GameState) -> PlayerMove:
         await self.update_state(state=state)
-        # while True:
-        #     try:
-        #         player_move = await self.wait_task
-        #         return PlayerMove.model_validate_json(player_move)
-        #     except ValidationError, JSONDecodeError:
-        #         pass
-        if PlayerOptions.CALL in state.options:
-            return PlayerMove(move=PlayerOptions.CALL)
-        return PlayerMove(move=PlayerOptions.CHECK)
+        while True:
+            player_move = await self.wait_task
+            try:
+                move = PlayerMove.model_validate_json(player_move)
+                return move
+            except JSONDecodeError, ValidationError:
+                pass
 
     async def update_state(self, state: GameState) -> None:
         if self._websocket.client_state == WebSocketState.CONNECTED:
@@ -37,9 +35,9 @@ class WebSocketClient(BaseClient):
 
 
 class GameServer:
-    def __init__(self):
+    def __init__(self, bots_number: int = 0):
         self.game_manager = GameManager()
-        for i in range(2):
+        for i in range(bots_number):
             self.game_manager.add_client(Bot(name="Bot" + str(i + 1)))
         self.app = FastAPI()
 
@@ -64,7 +62,7 @@ class GameServer:
                 self.game_manager.add_client(client)
                 await websocket.accept()
                 while True:
-                    task_message = asyncio.create_task(websocket.receive_json())
+                    task_message = asyncio.create_task(websocket.receive_text())
                     client.wait_task = task_message
                     try:
                         await task_message
@@ -78,5 +76,5 @@ class GameServer:
                 self.game_manager.remove_client(name)
 
 
-server = GameServer()
+server = GameServer(bots_number=2)
 app = server.app
