@@ -1,5 +1,5 @@
-import { Player } from "./player"
-import { Cards } from "./cards"
+import { Player } from "./Player"
+import { Cards } from "./Cards"
 
 
 export function Game({ gameState }) {

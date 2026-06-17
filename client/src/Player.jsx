@@ -1,4 +1,4 @@
-import { Cards, BackCards } from "/src/cards"
+import { Cards, BackCards } from "./Cards"
 
 export function Player({ player }) {
     return (
