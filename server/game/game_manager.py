@@ -40,7 +40,7 @@ class GameManager:
                 async with asyncio.TaskGroup() as tg:
                     for client_name in self._clients:
                         tg.create_task(self._clients[client_name].update_state(game_state))
-                await asyncio.sleep(1)
+                await asyncio.sleep(5)
 
     async def _send_state_with_hidden_cards(self, game_state: GameState) -> PlayerMove:
         """Send the masked game state to all clients and await the active player's move."""
@@ -52,10 +52,10 @@ class GameManager:
             for client_name in self._clients:
                 # todo mb fix copying
                 state_to_send = state_to_send.model_copy()
-                players_for_client = [
-                    player if player.name == client_name else player.model_copy(update={"cards": []})
-                    for player in game_state.players
-                ]
+                players_for_client = [player
+                                      if player.name == client_name else player.model_copy(update={"cards": [None, None]})
+                                      if player.cards else player.model_copy(update={"cards": []})
+                                      for player in game_state.players]
                 state_to_send.players = players_for_client
                 if client_name == state_to_send.active_player:
                     client_move = tg.create_task(
