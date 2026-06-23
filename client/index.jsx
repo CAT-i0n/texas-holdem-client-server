@@ -2,10 +2,11 @@ import { createRoot } from "react-dom/client";
 import { Game } from "./src/Game";
 import { OptionButtons } from "./src/OptionButtons"
 
+const playerName = `Player${String(Date.now()).slice(-4, -1)}`
 const startEndpoint = `/start`
 
 const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
-const ws = new WebSocket(`${wsProtocol}://${location.host}/connect/Player${String(Date.now()).slice(-4, -1)}`);
+const ws = new WebSocket(`${wsProtocol}://${location.host}/connect/${playerName}`);
 
 
 function send_data(move, bet = NaN) {
@@ -18,13 +19,8 @@ ws.onopen = () => {
 ws.onmessage = (event) => {
     const gameState = JSON.parse(event.data)
     root.render(<div>
-        <Game gameState={gameState} />
-        {
-            gameState?.options &&
-            <OptionButtons options={gameState.options} send_data={send_data} />
-        }
-    </div>
-    )
+        <Game gameState={gameState} playerName={playerName} send_data={send_data} />
+    </div>)
 };
 ws.onclose = () => {
     console.log('Connection closed');

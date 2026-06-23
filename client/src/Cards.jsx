@@ -8,41 +8,22 @@ const CARD_VALUES = {
     7: "7",
     8: "8",
     9: "9",
-    10: "10",
+    10: "T",
     11: "J",
     12: "Q",
     13: "K",
     14: "A",
 }
+import { CARD_SIZE } from "./Consts"
 
 
-export function CardImage({ card }) {
-    return (<img src={`./data/Deck/${CARD_SUITS[card.suit]}/${CARD_VALUES[card.value]}.png`} />);
-}
-
-
-export function Cards(cards) {
-    return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: '10px',
-            overflowX: 'auto' // Add scroll if images overflow
-        }}>
-            {cards.map((card) => (
-                <CardImage card = {card}/>))}
-        </div>
-    );
+export function Cards({ cards }) {
+    return <g>
+        {cards.map((card, cardIndex) => (
+            <g key={cardIndex} transform={`translate(${cardIndex * CARD_SIZE}, 0)`}>
+                {card ? <image href={`./assets/Deck/${CARD_VALUES[card.value]}${CARD_SUITS[card.suit]}.svg`} width={CARD_SIZE} />
+                    : <image href={`./assets/Deck/2B.svg`} width={CARD_SIZE} />}
+            </g>
+        ))}
+    </g>
 };
-
-export function BackCards() {
-    return (<div style={{
-        display: 'flex',
-        flexDirection: 'row',
-        gap: '10px',
-        overflowX: 'auto' // Add scroll if images overflow
-    }}>
-        <img src={`./data/Deck/back.png`} />
-        <img src={`./data/Deck/back.png`} />
-    </div>)
-}
