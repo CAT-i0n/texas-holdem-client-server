@@ -54,33 +54,3 @@ class CombinationComparator:
 
     def _is_straight(self, values: list[int]):
         return len(values) == 5 and (values[0] - values[4] == 4 or values == (14, 5, 4, 3, 2))
-
-
-# if __name__ == "__main__":
-#     c = CombinationComparator()
-#     player1 = Player(
-#         name="a",
-#         cards=[
-#             Card(suit="h", value=14),
-#             Card(suit="d", value=5),
-#         ],
-#     )
-#     player2 = Player(
-#         name="b",
-#         cards=[
-#             Card(suit="s", value=14),
-#             Card(suit="c", value=10),
-#         ],
-#     )
-#     winners = c.get_winners(
-#         players=[player1, player2],
-#         board_cards=[
-#             Card(suit="h", value=14),
-#             Card(suit="d", value=5),
-#             Card(suit="c", value=3),
-#             Card(suit="h", value=6),
-#             Card(suit="c", value=7),
-#         ],
-#     )
-#     for item in winners:
-#         print(item)

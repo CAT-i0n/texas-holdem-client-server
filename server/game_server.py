@@ -1,15 +1,14 @@
 import asyncio
 from json import JSONDecodeError
-from typing import Coroutine
+from typing import Coroutine, Awaitable
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
-
-from .game.game_manager import BaseClient, Bot, GameManager, GameState, PlayerMove
-from .game.texas_holdem_game.constants import PlayerOptions
-
 from starlette.websockets import WebSocketState
+
+from .game.game_manager import BaseClient, Bot, GameManager, GameState, NotEnoughPlayersException, PlayerMove
+from .game.texas_holdem_game.constants import PlayerOptions
 
 
 class WebSocketClient(BaseClient):
@@ -17,17 +16,16 @@ class WebSocketClient(BaseClient):
         self._name = name
         self._websocket = websocket
         # todo: property
-        self.wait_task: Coroutine = None
+        self.wait_task: Coroutine | None = None
 
     async def move(self, state: GameState) -> PlayerMove:
         await self.update_state(state=state)
-        while True:
+        try:
             player_move = await self.wait_task
-            try:
-                move = PlayerMove.model_validate_json(player_move)
-                return move
-            except JSONDecodeError, ValidationError:
-                pass
+            move = PlayerMove.model_validate_json(player_move)
+            return move
+        except WebSocketDisconnect:
+            return PlayerMove(move=PlayerOptions.FOLD)
 
     async def update_state(self, state: GameState) -> None:
         if self._websocket.client_state == WebSocketState.CONNECTED:
@@ -53,7 +51,11 @@ class GameServer:
     def setup_routes(self):
         @self.app.post("/start")
         async def start_game():
-            self.game_manager.run_game()
+            if not self.game_manager.is_game_running():
+                try:
+                    self.game_manager.run_game()
+                except NotEnoughPlayersException:
+                    pass
 
         @self.app.websocket("/connect/{name}")
         async def connect_player(websocket: WebSocket, name: str):
@@ -76,5 +78,5 @@ class GameServer:
                 self.game_manager.remove_client(name)
 
 
-server = GameServer(bots_number=2)
+server = GameServer(bots_number=0)
 app = server.app

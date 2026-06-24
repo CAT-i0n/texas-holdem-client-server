@@ -1,4 +1,5 @@
 from collections import defaultdict, deque
+from .utils import add_cycle
 from itertools import cycle
 from typing import Generator
 
@@ -17,7 +18,9 @@ class TexasHoldemGame:
     """
 
     def __init__(self, player_names: list[str], blind_size: int = 10, deck=Deck()):
-        self._players: list[Player] = [Player(name=name) for name in player_names]
+        self._players: list[Player] = [
+            Player(name=name, chips=blind_size * CHIPS_TO_BLIND_RATIO) for name in player_names
+        ]
         self._blind_size: int = blind_size
         self._deck: Deck = deck
         self._pot: dict[Player, int] = defaultdict(int)
@@ -26,11 +29,37 @@ class TexasHoldemGame:
         self._active_player: Player | None = None
         self._current_order: deque[Player] = []
         self._combination_comparator = CombinationComparator()
+        self.is_running: bool = False
+
+    def add_player(self, player_name):
+        player = Player(name=player_name)
+        player.chips = self._blind_size * CHIPS_TO_BLIND_RATIO
+        self._players.append(player)
+
+    def remove_player(self, player_name):
+        for ind, player in enumerate(self._players):
+            if player_name == player.name:
+                del self._players[ind]
+                break
+        for ind, player in enumerate(self._current_order):
+            if player_name == player.name:
+                del self._current_order[ind]
+                break
+
+    def get_current_state(self):
+        return self._gen_state(active_player=self._active_player)
+
+    def reset(self):
+        self._board_cards = []
+        self._players[0].cards = []
+        self._players[0].chips += sum(self._pot.values()) + self._players[0].bet
+        self._players[0].bet = 0
+        self._pot.clear()
 
     def _playing_order_generator(self) -> Generator[list[Player]]:
         """Generate the playing orderfor for each deal."""
         order = []
-        for player in cycle(self._players):
+        for player in add_cycle(self._players):
             if order and player == order[0]:
                 yield order
                 order = []
@@ -50,10 +79,9 @@ class TexasHoldemGame:
     def _gen_state(
         self,
         active_player: Player | None = None,
-        options: dict[PlayerOptions, ActionValue] = {},
     ) -> GameState:
         """Generate the current state of the game."""
-        self._active_player = active_player
+        options = self._gen_options(active_player) if active_player else {}
         state = GameState(
             players=self._players,
             pot=sum(self._pot.values()),
@@ -94,19 +122,15 @@ class TexasHoldemGame:
 
     def game_loop(self) -> Generator[GameState]:
         """Run the main game loop and yield the game state after each action."""
-        for player in self._players:
-            player.chips = self._blind_size * CHIPS_TO_BLIND_RATIO
 
         order_generator = self._playing_order_generator()
         while sum(player.is_active for player in self._players) > 1:
-
             # initiate round
             players_order = next(order_generator)
             self._set_roles(players_order)
             self._deck.reshuffle_deck()
             for player in players_order:
                 player.cards = self._deck.get_cards(2)
-
             # game
             for round in GAME_ROUNDS:
                 yield from self._betting_round(
@@ -153,12 +177,11 @@ class TexasHoldemGame:
         self._board_cards += self._deck.get_cards(cards_to_board)
         self._current_order = self._current_order_generator(first_player)
         while self._current_order:
-            player = self._current_order.popleft()
-            options = self._gen_options(player)
+            self._active_player = self._current_order.popleft()
+            options = self._gen_options(self._active_player)
             if options:
                 yield self._gen_state(
-                    active_player=player,
-                    options=options,
+                    active_player=self._active_player,
                 )
         self._current_bet = 0
         for player in self._players:
