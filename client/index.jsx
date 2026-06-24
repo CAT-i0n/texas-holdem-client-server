@@ -38,5 +38,6 @@ async function start_game() {
 
 const root = createRoot(document.getElementById("app"));
 
-root.render(<button name="start" onClick={start_game}>Начать</button>);
-
+root.render(<div className="menu">
+    <button className="menu-button"  name="start" onClick={start_game}>Начать</button>
+</div>);

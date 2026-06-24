@@ -7,26 +7,33 @@ export function OptionButtons({ options, send_data }) {
             case 'raise':
             case 'bet':
                 var currentValue = 0
-                elements.push(<button className="action" onClick={() => send_data(option, document.getElementById('raise-value').textContent)}>{option}</button>)
-                elements.push(
-                    <input type="range" orient="vertical"
+                elements.push(<div className="action">
+                    <input type="range" orient="vertical" className="slider" id='raise-slider'
                         min={options[option][0]}
                         max={options[option][1]}
                         onChange={(e) => {
                             const val = e.target.value;
-                            document.getElementById('raise-value').textContent = val;
+                            document.getElementById('raise-button').innerHTML = `${option}<br>${val}`
                         }}
-                        defaultValue={options[option][0]} id="myRange"/>)
-                elements.push(<span className="raise-num" id='raise-value'> {options[option][0]}</span>)
+                        defaultValue={options[option][0]} />
+                    <button id='raise-button'
+                        className="action-button"
+                        onClick={() => send_data(option, document.getElementById("raise-slider").value)}>
+                        {option}<br/>{options[option][0]}
+                    </button>
+                </div>)
                 break;
             default:
-                elements.push(<button className="action" onClick={() => send_data(option)}>{option}</button>);
+                elements.push(<div className="action">
+                    <button className="action-button" onClick={() => send_data(option)}>{option}</button>
+                </div>);
+
         }
 
     }
     return (
         <foreignObject
-            x={750} y={-90} width={1000} height={VIEW_BOX_SIZE.y}>
+            x={VIEW_BOX_SIZE.x - 250} y={-50} width={VIEW_BOX_SIZE.x} height={VIEW_BOX_SIZE.y}>
             <div style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -36,9 +43,10 @@ export function OptionButtons({ options, send_data }) {
             }}>
                 <div style={{
                     height: '100%',
+                    width: '100%',
                     display: 'flex',
                     flexDirection: 'row',
-                    gap: '1%',
+                    gap: '2%',
                     backgroundColor: 'transparent',
                     alignItems: 'flex-end'
                 }}>
