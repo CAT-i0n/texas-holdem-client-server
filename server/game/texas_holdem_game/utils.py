@@ -1,4 +1,4 @@
-from typing import Sequence, Generator, Any
+from typing import Any, Generator, Sequence
 
 
 def add_cycle(arr: Sequence) -> Generator[Any, None, None]:

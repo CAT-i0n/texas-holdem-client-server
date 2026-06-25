@@ -1,12 +1,13 @@
 from collections import defaultdict, deque
-from .utils import add_cycle
 from itertools import cycle
 from typing import Generator
 
 from .combination_comparator import CombinationComparator
-from .constants import CARDS_TO_BOARD, CHIPS_TO_BLIND_RATIO, FISRT_PLAYER_NUM, GAME_ROUNDS, GameRole, PlayerOptions
+from .constants import (CARDS_TO_BOARD, CHIPS_TO_BLIND_RATIO, FISRT_PLAYER_NUM,
+                        GAME_ROUNDS, GameRole, PlayerOptions)
 from .deck import Card, Deck
 from .models import ActionValue, Card, GameState, Player, PlayerMove
+from .utils import add_cycle
 
 
 class TexasHoldemGame:
@@ -27,9 +28,9 @@ class TexasHoldemGame:
         self._current_bet: int = 0
         self._board_cards: list[Card] = []
         self._active_player: Player | None = None
+        self._global_order: list[Player] = []
         self._current_order: deque[Player] = []
         self._combination_comparator = CombinationComparator()
-        self.is_running: bool = False
 
     def add_player(self, player_name):
         player = Player(name=player_name)
@@ -39,12 +40,13 @@ class TexasHoldemGame:
     def remove_player(self, player_name):
         for ind, player in enumerate(self._players):
             if player_name == player.name:
+                player = self._players[ind]
                 del self._players[ind]
                 break
-        for ind, player in enumerate(self._current_order):
-            if player_name == player.name:
-                del self._current_order[ind]
-                break
+        self._global_order.remove(player)
+        if player in self._current_order:
+            self._current_order.remove(player)
+        self._pot[player] += player.bet
 
     def get_current_state(self):
         return self._gen_state(active_player=self._active_player)
@@ -54,6 +56,7 @@ class TexasHoldemGame:
         self._players[0].cards = []
         self._players[0].chips += sum(self._pot.values()) + self._players[0].bet
         self._players[0].bet = 0
+        self._active_player = None
         self._pot.clear()
 
     def _playing_order_generator(self) -> Generator[list[Player]]:
@@ -126,15 +129,15 @@ class TexasHoldemGame:
         order_generator = self._playing_order_generator()
         while sum(player.is_active for player in self._players) > 1:
             # initiate round
-            players_order = next(order_generator)
-            self._set_roles(players_order)
+            self._global_order = next(order_generator)
+            self._set_roles(self._global_order)
             self._deck.reshuffle_deck()
-            for player in players_order:
+            for player in self._global_order:
                 player.cards = self._deck.get_cards(2)
             # game
             for round in GAME_ROUNDS:
                 yield from self._betting_round(
-                    first_player=players_order[round[FISRT_PLAYER_NUM] % len(players_order)],
+                    first_player=self._global_order[round[FISRT_PLAYER_NUM] % len(self._global_order)],
                     cards_to_board=round[CARDS_TO_BOARD],
                 )
                 active_players = [player for player in self._players if player.cards]

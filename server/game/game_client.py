@@ -28,7 +28,7 @@ class Bot(BaseClient):
         self._name = name
 
     async def move(self, state: GameState):
-        # await asyncio.sleep(1)
+        await asyncio.sleep(0.1)
         if PlayerOptions.CALL in state.options:
             return PlayerMove(move=PlayerOptions.CALL)
         return PlayerMove(move=PlayerOptions.CHECK)

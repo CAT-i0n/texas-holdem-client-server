@@ -1,13 +1,13 @@
 import asyncio
+from asyncio import CancelledError, Task
 from json import JSONDecodeError
-from typing import Coroutine, Awaitable
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import ValidationError
 from starlette.websockets import WebSocketState
 
-from .game.game_manager import BaseClient, Bot, GameManager, GameState, NotEnoughPlayersException, PlayerMove
+from .game.game_manager import (BaseClient, Bot, GameManager, GameState,
+                                NotEnoughPlayersException, PlayerMove)
 from .game.texas_holdem_game.constants import PlayerOptions
 
 
@@ -16,7 +16,7 @@ class WebSocketClient(BaseClient):
         self._name = name
         self._websocket = websocket
         # todo: property
-        self.wait_task: Coroutine | None = None
+        self.wait_task: Task | None = None
 
     async def move(self, state: GameState) -> PlayerMove:
         await self.update_state(state=state)
@@ -24,8 +24,9 @@ class WebSocketClient(BaseClient):
             player_move = await self.wait_task
             move = PlayerMove.model_validate_json(player_move)
             return move
-        except WebSocketDisconnect:
+        except WebSocketDisconnect, CancelledError:
             return PlayerMove(move=PlayerOptions.FOLD)
+                
 
     async def update_state(self, state: GameState) -> None:
         if self._websocket.client_state == WebSocketState.CONNECTED:
@@ -53,9 +54,9 @@ class GameServer:
         async def start_game():
             if not self.game_manager.is_game_running():
                 try:
-                    self.game_manager.run_game()
-                except NotEnoughPlayersException:
-                    pass
+                    asyncio.create_task(self.game_manager.run_game())
+                except NotEnoughPlayersException as e:
+                    print(e)
 
         @self.app.websocket("/connect/{name}")
         async def connect_player(websocket: WebSocket, name: str):
@@ -70,12 +71,12 @@ class GameServer:
                         await task_message
                     except JSONDecodeError:
                         continue
+                    except CancelledError:
+                        pass
             except WebSocketDisconnect:
-                pass
+                self.game_manager.remove_client(name)
             except Exception as e:
                 print(f"WebSocket connection closed with exception: {e}")
-            finally:
-                self.game_manager.remove_client(name)
 
 
 server = GameServer(bots_number=0)
