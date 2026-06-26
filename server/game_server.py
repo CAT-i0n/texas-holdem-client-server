@@ -6,8 +6,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketState
 
-from .game.game_manager import (BaseClient, Bot, GameManager, GameState,
-                                NotEnoughPlayersException, PlayerMove)
+from .game.game_manager import BaseClient, Bot, GameManager, GameState, NotEnoughPlayersException, PlayerMove
 from .game.texas_holdem_game.constants import PlayerOptions
 
 
@@ -26,7 +25,6 @@ class WebSocketClient(BaseClient):
             return move
         except WebSocketDisconnect, CancelledError:
             return PlayerMove(move=PlayerOptions.FOLD)
-                
 
     async def update_state(self, state: GameState) -> None:
         if self._websocket.client_state == WebSocketState.CONNECTED:
@@ -54,9 +52,9 @@ class GameServer:
         async def start_game():
             if not self.game_manager.is_game_running():
                 try:
-                    asyncio.create_task(self.game_manager.run_game())
+                    await self.game_manager.run_game()
                 except NotEnoughPlayersException as e:
-                    print(e)
+                    pass
 
         @self.app.websocket("/connect/{name}")
         async def connect_player(websocket: WebSocket, name: str):

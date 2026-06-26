@@ -3,8 +3,7 @@ from itertools import cycle
 from typing import Generator
 
 from .combination_comparator import CombinationComparator
-from .constants import (CARDS_TO_BOARD, CHIPS_TO_BLIND_RATIO, FISRT_PLAYER_NUM,
-                        GAME_ROUNDS, GameRole, PlayerOptions)
+from .constants import CARDS_TO_BOARD, CHIPS_TO_BLIND_RATIO, FISRT_PLAYER_NUM, GAME_ROUNDS, GameRole, PlayerOptions
 from .deck import Card, Deck
 from .models import ActionValue, Card, GameState, Player, PlayerMove
 from .utils import add_cycle
@@ -37,16 +36,16 @@ class TexasHoldemGame:
         player.chips = self._blind_size * CHIPS_TO_BLIND_RATIO
         self._players.append(player)
 
-    def remove_player(self, player_name):
-        for ind, player in enumerate(self._players):
-            if player_name == player.name:
-                player = self._players[ind]
-                del self._players[ind]
-                break
-        self._global_order.remove(player)
-        if player in self._current_order:
-            self._current_order.remove(player)
+    def remove_player(self, player_name) -> int:
+        """Remove player and return current number of active players"""
+        for player_lists in (self._players, self._current_order, self._global_order):
+            for ind, player in enumerate(player_lists):
+                if player_name == player.name:
+                    player = player_lists[ind]
+                    del player_lists[ind]
+                    break
         self._pot[player] += player.bet
+        return len(self._global_order)
 
     def get_current_state(self):
         return self._gen_state(active_player=self._active_player)
@@ -113,7 +112,10 @@ class TexasHoldemGame:
         match move.move:
             case PlayerOptions.FOLD:
                 self._pot[self._active_player] += self._active_player.bet
+                self._active_player.bet = 0
                 self._active_player.cards.clear()
+                if len(self._current_order) == 1:
+                    self._current_order.popleft()
             case PlayerOptions.CALL:
                 self._active_player.bet_chips(self._current_bet - self._active_player.bet)
             case PlayerOptions.BET | PlayerOptions.RAISE:
