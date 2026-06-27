@@ -10,6 +10,11 @@ class NotEnoughPlayersException(Exception):
         super().__init__("Not ennough players to start")
 
 
+class NameTakerException(Exception):
+    def __init__(self):
+        super().__init__("Name already taken by another user")
+
+
 class GameManager:
     def __init__(self):
         self._clients: dict[str, BaseClient] = {}
@@ -32,14 +37,14 @@ class GameManager:
             if self._game_process:
                 self._send_current_state()
         else:
-            raise
+            raise NameTakerException
 
     def remove_client(self, name):
         if name in self._clients:
             del self._clients[name]
             active_players_num = self._game.remove_player(name)
             self._send_current_state()
-        if all(isinstance(player, Bot) for player in self._clients) or len(self._clients) == 1:
+        if all(isinstance(player, Bot) for player in list(self._clients.values())) or len(self._clients) == 1:
             if self._game_process:
                 self._game_process.cancel()
             if active_players_num == 1:
@@ -65,7 +70,10 @@ class GameManager:
                 try:
                     player_move = await self._send_state_with_hidden_cards(game_state=game_state)
                 except CancelledError:
-                    if len(self._clients) == 1:
+                    if (
+                        all(isinstance(player, Bot) for player in list(self._clients.values()))
+                        or len(self._clients) == 1
+                    ):
                         raise CancelledError
                 else:
                     if player_move:

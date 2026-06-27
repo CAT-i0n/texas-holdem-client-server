@@ -2,11 +2,19 @@ import asyncio
 from asyncio import CancelledError, Task
 from json import JSONDecodeError
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocketState
 
-from .game.game_manager import BaseClient, Bot, GameManager, GameState, NotEnoughPlayersException, PlayerMove
+from .game.game_manager import (
+    BaseClient,
+    Bot,
+    GameManager,
+    GameState,
+    NameTakerException,
+    NotEnoughPlayersException,
+    PlayerMove,
+)
 from .game.texas_holdem_game.constants import PlayerOptions
 
 
@@ -60,8 +68,14 @@ class GameServer:
         async def connect_player(websocket: WebSocket, name: str):
             try:
                 client = WebSocketClient(name=name, websocket=websocket)
-                self.game_manager.add_client(client)
-                await websocket.accept()
+                try:
+                    self.game_manager.add_client(client)
+                except NameTakerException:
+                    await websocket.close(code=status.WS_1003_UNSUPPORTED_DATA)
+                    return
+                else:
+                    await websocket.accept()
+
                 while True:
                     task_message = asyncio.create_task(websocket.receive_text())
                     client.wait_task = task_message
