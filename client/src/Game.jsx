@@ -2,7 +2,7 @@ import { Table } from "./Table";
 import { VIEW_BOX_SIZE } from "./Consts";
 import { OptionButtons } from "./OptionButtons";
 
-export function Game({ gameState, playerName, send_data }) {
+export function Game({ gameState, playerName, ws }) {
     let players = gameState.players;
     const board = gameState.cards
 
@@ -16,7 +16,7 @@ export function Game({ gameState, playerName, send_data }) {
             className="poker-table-svg"
         >
             <Table players={players} board={board} pot={gameState.pot} />
-            {gameState.options && <OptionButtons options={gameState.options} send_data={send_data} />}
+            {gameState.options && <OptionButtons options={gameState.options} send_data={ws.send_data} />}
         </svg>
     </div>)
 }

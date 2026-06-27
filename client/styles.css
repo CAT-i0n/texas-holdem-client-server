@@ -1,0 +1,102 @@
+* {
+    background-color: rgba(0, 0, 0, 0.296);
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+
+}
+
+.table-container {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.poker-table-svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.action {
+    background-color: transparent;
+    vertical-align: bottom;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+.action-button {
+    background-color: rgba(255, 183, 0, 0.814);
+    padding: 0em 1em;
+    border-radius: 10%;
+    height: 3em;
+    width: 5em;
+}
+
+
+
+.menu {
+    background-color: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+
+.menu-element {
+    background-color: rgba(234, 255, 0, 0.814);
+    padding: 1em 2em;
+    border-radius: 3%;
+    border-width: 5px;
+    border-color: rgb(191, 255, 0);
+}
+
+.loader {
+    --c: no-repeat linear-gradient(rgb(255, 0, 136) 0 0);
+    background:
+        var(--c), var(--c), var(--c),
+        var(--c), var(--c), var(--c),
+        var(--c), var(--c), var(--c);
+    background-size: 16px 16px;
+    animation:
+        l32-1 1s infinite,
+        l32-2 1s infinite;
+}
+
+@keyframes l32-1 {
+
+    0%,
+    100% {
+        width: 45px;
+        height: 45px
+    }
+
+    35%,
+    65% {
+        width: 65px;
+        height: 65px
+    }
+}
+
+@keyframes l32-2 {
+
+    0%,
+    40% {
+        background-position: 0 0, 0 50%, 0 100%, 50% 100%, 100% 100%, 100% 50%, 100% 0, 50% 0, 50% 50%
+    }
+
+    60%,
+    100% {
+        background-position: 0 50%, 0 100%, 50% 100%, 100% 100%, 100% 50%, 100% 0, 50% 0, 0 0, 50% 50%
+    }
+}

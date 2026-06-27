@@ -43,7 +43,7 @@ export function Table({ players, board, pot }) {
             <g transform={`translate(${CENTER_COORDS.x - CARD_SIZE*2.5}, ${CENTER_COORDS.y - 35})`}>
                 <Cards cards={board} />
             </g>
-            <text y={CENTER_COORDS.y - 40} x={CENTER_COORDS.x} textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
+            <text y={CENTER_COORDS.y - 40} x={CENTER_COORDS.x} textAnchor="middle" fill="white" fontSize="20" fontWeight="bold">
                 ${pot}
             </text>
         </g>
